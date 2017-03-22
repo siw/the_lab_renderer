@@ -35,10 +35,10 @@ internal class ValveShaderGUI : ShaderGUI
 		public static GUIContent[] uvSetOptions = new GUIContent[] { new GUIContent("UV channel 0"), new GUIContent("UV channel 1") };
 
 		public static GUIContent unlitText = new GUIContent( "Unlit", "" );
-
+        
 		public static string emptyTootip = "";
 		public static GUIContent albedoText = new GUIContent("Albedo", "Albedo (RGB) and Transparency (A)");
-		public static GUIContent alphaCutoffText = new GUIContent("Alpha Cutoff", "Threshold for alpha cutoff");
+        public static GUIContent alphaCutoffText = new GUIContent("Alpha Cutoff", "Threshold for alpha cutoff");
 		public static GUIContent specularMapText = new GUIContent("Specular", "Reflectance (RGB) and Gloss (A)");
 		public static GUIContent reflectanceMinText = new GUIContent( "Reflectance Min", "" );
 		public static GUIContent reflectanceMaxText = new GUIContent( "Reflectance Max", "" );
@@ -56,6 +56,7 @@ internal class ValveShaderGUI : ShaderGUI
 		public static GUIContent detailMaskText = new GUIContent("Detail Mask", "Mask for Secondary Maps (A)");
 		public static GUIContent detailAlbedoText = new GUIContent("Detail Albedo", "Detail Albedo (RGB) multiplied by 2");
 		public static GUIContent detailNormalMapText = new GUIContent("Detail Normal", "Detail Normal Map");
+        public static GUIContent castShadowsText = new GUIContent("Cast shadows", "");
 		public static GUIContent receiveShadowsText = new GUIContent( "Receive Shadows", "" );
 		public static GUIContent renderBackfacesText = new GUIContent( "Render Backfaces", "" );
 		public static GUIContent overrideLightmapText = new GUIContent( "Override Lightmap", "Requires ValveOverrideLightmap.cs scrip on object" );
@@ -76,7 +77,7 @@ internal class ValveShaderGUI : ShaderGUI
 	}
 
 	MaterialProperty unlit = null;
-	MaterialProperty blendMode = null;
+    MaterialProperty blendMode = null;
 	MaterialProperty specularMode = null;
 	MaterialProperty albedoMap = null;
 	MaterialProperty albedoColor = null;
@@ -102,10 +103,12 @@ internal class ValveShaderGUI : ShaderGUI
 	MaterialProperty emissionColorForRendering = null;
 	MaterialProperty emissionMap = null;
 	MaterialProperty detailMask = null;
+        MaterialProperty rampTex = null;
 	MaterialProperty detailAlbedoMap = null;
 	MaterialProperty detailNormalMapScale = null;
 	MaterialProperty detailNormalMap = null;
 	MaterialProperty uvSetSecondary = null;
+    MaterialProperty castShadows = null;
 	MaterialProperty receiveShadows = null;
 	MaterialProperty renderBackfaces = null;
 	MaterialProperty overrideLightmap = null;
@@ -122,7 +125,7 @@ internal class ValveShaderGUI : ShaderGUI
 	public void FindProperties (MaterialProperty[] props)
 	{
 		unlit = FindProperty( "g_bUnlit", props );
-		blendMode = FindProperty( "_Mode", props );
+        blendMode = FindProperty( "_Mode", props );
 		specularMode = FindProperty( "_SpecularMode", props );
 		albedoMap = FindProperty( "_MainTex", props );
 		albedoColor = FindProperty ("_Color", props);
@@ -148,10 +151,11 @@ internal class ValveShaderGUI : ShaderGUI
 		emissionColorForRendering = FindProperty ("_EmissionColor", props);
 		emissionMap = FindProperty ("_EmissionMap", props);
 		detailMask = FindProperty ("_DetailMask", props);
-		detailAlbedoMap = FindProperty ("_DetailAlbedoMap", props);
+        detailAlbedoMap = FindProperty ("_DetailAlbedoMap", props);
 		detailNormalMapScale = FindProperty ("_DetailNormalMapScale", props);
 		detailNormalMap = FindProperty ("_DetailNormalMap", props);
 		uvSetSecondary = FindProperty ("_UVSec", props);
+        castShadows = FindProperty("g_bCastShadows", props);
 		receiveShadows = FindProperty( "g_bReceiveShadows", props );
 		renderBackfaces = FindProperty( "g_bRenderBackfaces", props );
 		overrideLightmap = FindProperty( "g_tOverrideLightmap", props );
@@ -203,6 +207,9 @@ internal class ValveShaderGUI : ShaderGUI
 				SpecularModePopup();
 			}
 
+            m_MaterialEditor.ShaderProperty( castShadows, Styles.castShadowsText.text );
+            bool bCastShadows = ( castShadows.floatValue != 0.0f );
+
 			if ( !bUnlit )
 			{
 				m_MaterialEditor.ShaderProperty( receiveShadows, Styles.receiveShadowsText.text );
@@ -214,7 +221,7 @@ internal class ValveShaderGUI : ShaderGUI
 
 			//GUILayout.Label( Styles.primaryMapsText, EditorStyles.boldLabel );
 			DoAlbedoArea( material );
-			if ( !bUnlit )
+                if ( !bUnlit )
 			{
 				m_MaterialEditor.TexturePropertySingleLine( Styles.normalMapText, bumpMap, bumpMap.textureValue != null ? bumpScale : null );
 				DoSpecularMetallicArea( material );
@@ -578,7 +585,10 @@ internal class ValveShaderGUI : ShaderGUI
 		SetupMaterialWithBlendMode(material, (BlendMode)material.GetFloat("_Mode"));
 
 		SetMaterialKeywords(material);
-	}
+
+        if (material.GetFloat("g_bCastShadows") == 0.0f)
+            material.SetOverrideTag("RenderType", "DO_NOT_RENDER");
+        }
 
 	static void SetKeyword(Material m, string keyword, bool state)
 	{

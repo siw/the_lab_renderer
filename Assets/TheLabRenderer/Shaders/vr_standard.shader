@@ -5,7 +5,7 @@ Shader "Valve/vr_standard"
 	Properties
 	{
 		[Toggle( S_UNLIT )] g_bUnlit( "g_bUnlit", Int ) = 0
-
+		
 		_Color( "Color", Color ) = ( 1, 1, 1, 1 )
 		_MainTex( "Albedo", 2D ) = "white" {}
 		
@@ -51,6 +51,8 @@ Shader "Valve/vr_standard"
 
 		[Enum(UV0,0,UV1,1)] _UVSec ( "UV Set for secondary textures", Float ) = 0
 
+		[Toggle(D_CASTSHADOW)] g_bCastShadows("g_bCastShadows", Int) = 1
+
 		[Toggle( S_RECEIVE_SHADOWS )] g_bReceiveShadows( "g_bReceiveShadows", Int ) = 1
 
 		[Toggle( S_RENDER_BACKFACES )] g_bRenderBackfaces( "g_bRenderBackfaces", Int ) = 0
@@ -95,6 +97,7 @@ Shader "Valve/vr_standard"
 				#pragma only_renderers d3d11
 				#pragma exclude_renderers gles
 
+
 				//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 				#pragma shader_feature _ _ALPHATEST_ON _ALPHABLEND_ON _ALPHAPREMULTIPLY_ON
 				#pragma shader_feature _NORMALMAP
@@ -111,6 +114,10 @@ Shader "Valve/vr_standard"
 				#pragma shader_feature S_RECEIVE_SHADOWS
 				#pragma shader_feature S_OCCLUSION
 				#pragma shader_feature S_RENDER_BACKFACES
+				#pragma shader_feature D_MAGIC
+
+				#pragma shader_feature _VERTEXCOLOR
+				#pragma shader_feature _VERTEXCOLOR_LERP
 
 				#pragma multi_compile LIGHTMAP_OFF LIGHTMAP_ON
 				#pragma multi_compile DIRLIGHTMAP_OFF DIRLIGHTMAP_COMBINED DIRLIGHTMAP_SEPARATE
@@ -169,8 +176,9 @@ Shader "Valve/vr_standard"
 					#endif
 
 					#if ( MATRIX_PALETTE_SKINNING )
-						float4 vBoneIndices : COLOR;
+						float4 vBoneIndices : TEXCOORD3;
 					#endif
+					fixed4 color : COLOR;
 				};
 
 				struct PS_INPUT
@@ -204,6 +212,8 @@ Shader "Valve/vr_standard"
 					#if ( D_VALVE_FOG )
 						float2 vFogCoords : TEXCOORD6;
 					#endif
+
+					fixed4 color : COLOR;
 				};
 
 				float g_flValveGlobalVertexScale = 1.0; // Used to "hide" all valve materials for debugging
@@ -309,6 +319,7 @@ Shader "Valve/vr_standard"
 					}
 					#endif
 
+					o.color = i.color;
 					return o;
 				}
 
@@ -379,6 +390,9 @@ Shader "Valve/vr_standard"
 					}
 					#endif
 
+					vAlbedo *= i.color;
+
+
 					//--------------//
 					// Translucency //
 					//--------------//
@@ -396,14 +410,14 @@ Shader "Valve/vr_standard"
 
 					#if ( _ALPHABLEND_ON || _ALPHAPREMULTIPLY_ON )
 					{
-						o.vColor.a = vAlbedoTexel.a;
+						o.vColor.a = i.color.a * vAlbedoTexel.a;
 					}
 					#else
 					{
 						o.vColor.a = 1.0;
 					}
 					#endif
-
+					
 					//---------------//
 					// Tangent Space //
 					//---------------//
@@ -552,7 +566,7 @@ Shader "Valve/vr_standard"
 					#endif
 
 					// Diffuse
-					o.vColor.rgb = ( lightingTerms.vDiffuse.rgb + lightingTerms.vIndirectDiffuse.rgb ) * vAlbedo.rgb;
+					o.vColor.rgb = (lightingTerms.vDiffuse.rgb + lightingTerms.vIndirectDiffuse.rgb) * vAlbedo.rgb;
 
 					// Specular
 					#if ( !S_SPECULAR_NONE )

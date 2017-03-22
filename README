@@ -1,3 +1,16 @@
+Customised Lab Renderer with the following changes:
+
+03/22/2017
++ Fixes shadows to work with Unity 5.5+ and reversed-Z
++ Added partial support for Unity's shadow bias controls (see ValveCamera.cs for note)
++ Adds ability to toggle shadow casting. As the Lab uses shader replacement for the shadow pass, it doesn't respect the Mesh Renderer's Cast Shadows toggle, so my solution adds the toggle to the vr_standard shader, making it material-based. The replacement shader then ignores it during the shadow pass rendering.
++ Adds support for alpha cutout shadows and semi-transparent shadows, using Unity's built-in dither pattern
++ Adds support for vertex colors, including alpha. This means the matrix palette skinning bone indices are now passed in TEXCOORD3 (I'm unsure if this breaks anything? Unity's hardware skinning is kind of opaque and it's difficult to tell if it's enabled or not)
+
+- Simon Windmill (@coolpowers)
+
+Original README follows:
+
 The Lab Renderer
 
 Valve’s VR renderer used in The Lab (Valve’s VR launch title for the HTC Vive). 

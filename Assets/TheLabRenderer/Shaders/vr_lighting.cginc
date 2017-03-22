@@ -213,7 +213,10 @@ float ComputeShadow_PCF_3x3_Gaussian( float3 vPositionWs, float4x4 matWorldToSha
 	if ( ( shadowMapCenter.x < 0.0f ) || ( shadowMapCenter.x > 1.0f ) || ( shadowMapCenter.y < 0.0f ) || ( shadowMapCenter.y > 1.0f ) )
 		return 1.0f;
 
-	float objDepth = ( vPositionTextureSpace.z );
+	float objDepth = vPositionTextureSpace.z;
+#if defined(UNITY_REVERSED_Z)
+	objDepth = 1 - objDepth;
+#endif
 
 	/* // Depth texture visualization
 	if ( 1 )

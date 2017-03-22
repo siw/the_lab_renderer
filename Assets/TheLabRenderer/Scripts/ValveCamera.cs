@@ -496,7 +496,7 @@ public class ValveCamera : MonoBehaviour
 				{
 					0, 1, 2, 0, 2, 3
 				};
-				mesh.Optimize();
+				;
 				mesh.UploadMeshData( false );
 
 				m_adaptiveQualityDebugQuad = new GameObject( "AdaptiveQualityDebugQuad" );
@@ -1220,9 +1220,13 @@ public class ValveCamera : MonoBehaviour
 
 			// Set shader constants
 			Shader.SetGlobalVector( "g_vLightDirWs", new Vector4( l.transform.forward.normalized.x, l.transform.forward.normalized.y, l.transform.forward.normalized.z ) );
-
-			// Render
-			m_shadowCamera.RenderWithShader( m_shaderCastShadows, "RenderType" );
+            if ( l.type == LightType.Directional )
+                Shader.SetGlobalVector("unity_LightShadowBias", new Vector4(-l.shadowBias, 1, l.shadowNormalBias * (1.0f / vl.m_shadowResolution), 0)); // x value is wrong, can't figure it out?
+            else
+                Shader.SetGlobalVector("unity_LightShadowBias", new Vector4(-l.shadowBias, 0, 0, 0)); // spot setup, Lab fakes point light shadows with spots
+            
+            // Render
+            m_shadowCamera.RenderWithShader( m_shaderCastShadows, "RenderType" );
 
 			// Point lights require 6 fake spotlights for now
 			if ( l.type == LightType.Point )
